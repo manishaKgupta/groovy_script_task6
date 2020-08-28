@@ -1,0 +1,1 @@
+# groovy_script_task6
