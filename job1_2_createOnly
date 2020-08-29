@@ -1,0 +1,52 @@
+job ("J1-Groovy") {
+	
+  label('agentA')
+  description ("Job1 to pull GitHub Repo")
+  
+  scm {
+    github('manishaKgupta/webserver','master')
+       }
+  
+  triggers {
+	scm("* * * * * ")
+      }
+}
+
+job ("J2-Groovy") {
+	
+  label('agentA')
+  description ("Job2 to launch the pods")
+  triggers{
+			upstream('Job1-Groovy' , 'SUCCESS')
+		}
+  
+  scm {
+    github('manishaKgupta/webserver','master')
+       }
+  
+  triggers {
+	scm("* * * * * ")
+      }
+  steps {
+  shell(''' sudo cp index.html /root/jenkins
+if sudo docker images | grep vimal13/apache-webserver-php
+then
+echo "Already exists"
+else
+sudo docker pull vimal13/apache-webserver-php
+fi
+if sudo kubectl get deployment | grep mytask3-deploy
+then 
+echo "Already Exists"
+else
+sudo kubectl create -f /root/deploy-pvc.yml
+sudo kubectl expose deployment mytask3-deploy  --port=80 --type=NodePort
+sudo kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' > file
+pod_name=$(cat file)
+sleep 5
+sudo kubectl cp /root/index.html $pod_name:/var/www/html/index.html ~/index.html 
+fi '''
+
+)
+  }
+}
